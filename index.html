@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ใบงาน เรื่อง ปัจจัยการผลิตสินค้าและบริการ ม.2</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Itim & Sarabun สไตล์น่ารักและอ่านง่ายสำหรับใบงาน -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Itim&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- html2canvas & jsPDF for exporting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Itim', 'Sarabun', cursive, sans-serif;
+      background-color: #f0f4f8;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* กรอบสไตล์การ์ตูนคลาสสิก ปรับขนาดให้เหมาะกับทั้งมือถือและจอใหญ่ */
+    .comic-border {
+      border: 2.5px solid #2d3748;
+      border-radius: 16px;
+      box-shadow: 3px 3px 0px #2d3748;
+    }
+
+    @media (min-width: 640px) {
+      .comic-border {
+        border-width: 3px;
+        border-radius: 24px;
+        box-shadow: 4px 4px 0px #2d3748;
+      }
+    }
+
+    .sub-border {
+      border: 2px solid #2d3748;
+      border-radius: 12px;
+      box-shadow: 2px 2px 0px rgba(45, 55, 72, 0.3);
+    }
+
+    @media (min-width: 640px) {
+      .sub-border {
+        border-width: 2.5px;
+        border-radius: 16px;
+        box-shadow: 3px 3px 0px rgba(45, 55, 72, 0.4);
+      }
+    }
+
+    /* เส้นประสำหรับเขียนข้อความแบบใบงาน */
+    .lined-textarea {
+      background-attachment: local;
+      background-image: repeating-linear-gradient(
+        transparent,
+        transparent 28px,
+        #e2e8f0 28px,
+        #e2e8f0 30px
+      );
+      line-height: 30px;
+      font-size: 0.95rem;
+      resize: none;
+    }
+
+    @media (min-width: 640px) {
+      .lined-textarea {
+        background-image: repeating-linear-gradient(
+          transparent,
+          transparent 31px,
+          #cbd5e0 31px,
+          #cbd5e0 33px
+        );
+        line-height: 33px;
+        font-size: 1.05rem;
+      }
+    }
+
+    /* สไตล์แจ้งเตือนช่องที่ยังไม่กรอก */
+    .field-error {
+      border-color: #e53e3e !important;
+      background-color: #fff5f5 !important;
+      animation: shake 0.3s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+  </style>
+</head>
+<body class="text-gray-800 p-2 sm:p-4 md:p-6 min-h-screen flex flex-col items-center">
+
+  <!-- แถบเครื่องมือควบคุม (Action Bar) วางบนสุด รองรับมือถือและแท็บเล็ต -->
+  <header class="w-full max-w-4xl mb-3 sm:mb-4 bg-white p-3 sm:p-4 rounded-2xl shadow-sm border-2 border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+    <div class="text-center sm:text-left w-full sm:w-auto">
+      <h1 class="text-lg sm:text-2xl font-bold text-gray-800 flex items-center justify-center sm:justify-start gap-2">
+        <span>📝</span> ใบงานดิจิทัล: สังคมศึกษา ม.2
+      </h1>
+      <p class="text-xs sm:text-sm text-gray-500">ตอบให้ครบทุกข้อก่อนกดบันทึกเป็นรูปภาพ</p>
+    </div>
+    
+    <!-- ปุ่มคำสั่งต่างๆ จัด Grid ให้กดง่ายบนมือถือ -->
+    <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
+      <!-- ปุ่มดูเฉลย / แนวทางคำตอบ -->
+      <button onclick="toggleAnswerHint()" class="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-100 hover:bg-amber-200 active:scale-95 text-amber-900 border-2 border-amber-400 rounded-xl font-medium text-xs sm:text-sm transition">
+        <i class="fa-solid fa-lightbulb"></i>
+        <span>แนวคำตอบ</span>
+      </button>
+
+      <!-- ปุ่มล้างข้อมูล -->
+      <button onclick="resetWorksheet()" class="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 border-2 border-gray-300 rounded-xl font-medium text-xs sm:text-sm transition">
+        <i class="fa-solid fa-rotate-left"></i>
+        <span>เริ่มใหม่</span>
+      </button>
+
+      <!-- ปุ่มบันทึกเป็นรูปภาพ -->
+      <button onclick="downloadAsImage()" class="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-medium text-xs sm:text-sm shadow transition">
+        <i class="fa-solid fa-image"></i>
+        <span>บันทึกเป็นรูป</span>
+      </button>
+
+      <!-- ปุ่มส่งงาน เชื่อมไปยังเว็บที่กำหนด -->
+      <a href="https://panisa-cmd.github.io/social-m2/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl font-semibold text-xs sm:text-sm shadow transition">
+        <i class="fa-solid fa-paper-plane"></i>
+        <span>ส่งงาน</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- หน้ากระดาษใบงานหลัก รองรับ Fluid Layout ทั้งจอ Mobile, iPad, PC -->
+  <main id="worksheet" class="worksheet-container w-full max-w-4xl bg-white p-3.5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl comic-border relative">
+    
+    <!-- ลายตกแต่งหัวมุม -->
+    <div class="absolute -top-2.5 -left-2 sm:-top-3 sm:-left-3 text-2xl sm:text-3xl select-none">🐱</div>
+    <div class="absolute -top-2.5 -right-2 sm:-top-3 sm:-right-3 text-2xl sm:text-3xl select-none">🐱</div>
+
+    <!-- ส่วนหัวของใบงานตามแบบฟอร์ม -->
+    <div class="sub-border p-3 sm:p-4 mb-3 sm:mb-4 bg-slate-50/70">
+      <div class="text-center font-bold text-base sm:text-xl md:text-2xl mb-2 text-gray-900 leading-snug">
+        ใบงาน เรื่อง ปัจจัยการผลิตสินค้าและบริการ
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-y-2 text-xs sm:text-sm md:text-base border-b-2 border-dashed border-gray-300 pb-2.5 mb-2.5">
+        <div><span class="font-semibold text-gray-700">กลุ่มสาระการเรียนรู้:</span> สังคมศึกษาฯ</div>
+        <div class="sm:text-right"><span class="font-semibold text-gray-700">ชั้นมัธยมศึกษาปีที่:</span> 2</div>
+        <div><span class="font-semibold text-gray-700">สาระ:</span> เศรษฐศาสตร์</div>
+        <div class="sm:text-right"><span class="font-semibold text-gray-700">ตัวชี้วัด:</span> ส 3.1 ม.2/2</div>
+      </div>
+
+      <!-- ช่องกรอกข้อมูลนักเรียน -->
+      <div class="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center text-xs sm:text-sm md:text-base">
+        <div class="flex-grow flex items-center gap-1.5">
+          <label for="studentName" class="font-semibold whitespace-nowrap text-gray-800">ชื่อ-สกุล <span class="text-rose-500">*</span>:</label>
+          <input type="text" id="studentName" placeholder="เช่น ด.ช.รักเรียน ขยันยิ่ง" 
+                 class="w-full bg-transparent border-b-2 border-gray-400 focus:border-indigo-600 focus:outline-none px-2 py-1 transition-colors">
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <div class="flex items-center gap-1.5 flex-1 sm:w-28">
+            <label for="studentClass" class="font-semibold whitespace-nowrap text-gray-800">ชั้น <span class="text-rose-500">*</span>:</label>
+            <input type="text" id="studentClass" placeholder="ม.2/1" 
+                   class="w-full bg-transparent border-b-2 border-gray-400 focus:border-indigo-600 focus:outline-none px-1 py-1 text-center transition-colors">
+          </div>
+          <div class="flex items-center gap-1.5 flex-1 sm:w-24">
+            <label for="studentNo" class="font-semibold whitespace-nowrap text-gray-800">เลขที่ <span class="text-rose-500">*</span>:</label>
+            <input type="text" id="studentNo" placeholder="1" 
+                   class="w-full bg-transparent border-b-2 border-gray-400 focus:border-indigo-600 focus:outline-none px-1 py-1 text-center transition-colors">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- คำชี้แจง -->
+    <div class="flex items-start sm:items-center gap-1.5 mb-3 sm:mb-4 px-2.5 py-1.5 bg-amber-50 rounded-xl border border-amber-200">
+      <span class="font-bold text-amber-800 text-xs sm:text-sm whitespace-nowrap">📌 คำชี้แจง:</span>
+      <span class="text-xs sm:text-sm text-gray-700">ให้นักเรียนอธิบายความหมายและความสำคัญของปัจจัยการผลิตให้ครบทุกข้อ</span>
+    </div>
+
+    <!-- Grid ส่วนเนื้อหาหลัก 4 ปัจจัย -->
+    <div class="space-y-3 sm:space-y-4">
+
+      <!-- ข้อ 1: ที่ดิน (Land) -->
+      <section id="section-land" class="relative bg-white sub-border p-3 sm:p-4 hover:border-emerald-600 transition-colors">
+        <div class="flex flex-wrap items-center justify-between border-b pb-1.5 mb-2 gap-1">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xl sm:text-2xl">🌽🐄</span>
+            <h2 class="text-sm sm:text-lg font-bold text-gray-800">1. ที่ดิน (Land) <span class="text-rose-500">*</span></h2>
+          </div>
+          <span class="text-[11px] sm:text-xs font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">ผลตอบแทน: ค่าเช่า (Rent)</span>
+        </div>
+        
+        <p class="text-[11px] sm:text-xs text-gray-500 mb-1.5">รวมถึงทรัพยากรธรรมชาติที่อยู่บนดิน ใต้ดิน และในบรรยากาศ</p>
+        
+        <textarea id="ans-land" rows="3" placeholder="พิมพ์อธิบายความหมาย และตัวอย่างของ 'ที่ดิน'..." 
+                  class="w-full lined-textarea border border-gray-200 rounded-xl p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors"></textarea>
+        
+        <!-- แนวคำตอบที่ซ่อนไว้ -->
+        <div id="hint-land" class="hidden mt-2 p-2 sm:p-2.5 bg-emerald-50 rounded-xl text-xs sm:text-sm text-emerald-900 border border-emerald-200">
+          💡 <strong>แนวคำตอบ:</strong> หมายถึง พื้นแผ่นดิน รวมถึงทรัพยากรธรรมชาติต่างๆ เช่น ดิน น้ำ แร่ธาตุ ป่าไม้ สภาพภูมิอากาศ ผลตอบแทนคือ <strong>"ค่าเช่า" (Rent)</strong>
+        </div>
+      </section>
+
+      <!-- กล่องรวม: ร้านค้า / แรงงาน & ทุน (ปรับ Responsive เป็น Stack ในจอมือถือ) -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-stretch">
+        
+        <!-- โลโก้การ์ตูนตรงกลาง / ป้ายปัจจัยการผลิต -->
+        <div class="md:col-span-4 sub-border bg-amber-50/60 p-3 sm:p-4 flex flex-col items-center justify-center text-center relative overflow-hidden order-last md:order-first">
+          <div class="text-3xl sm:text-4xl mb-1 sm:mb-2">🏪✨</div>
+          <div class="text-base sm:text-xl font-black text-gray-900 border-2 border-dashed border-gray-800 rounded-xl py-1.5 sm:py-2 px-2.5 bg-white w-full shadow-sm">
+            ปัจจัยการผลิต<br class="hidden sm:inline">สินค้าและบริการ
+          </div>
+          <div class="flex justify-center items-center gap-3 sm:gap-4 mt-2 sm:mt-3 text-xl sm:text-2xl text-gray-600">
+            <span>🏭</span>
+            <span>🚜</span>
+            <span>⛵</span>
+          </div>
+        </div>
+
+        <!-- ฝั่งขวา: แรงงาน และ ทุน -->
+        <div class="md:col-span-8 flex flex-col gap-3 sm:gap-4">
+          
+          <!-- ข้อ 2: แรงงาน (Labor) -->
+          <section id="section-labor" class="bg-white sub-border p-3 sm:p-4 hover:border-blue-600 transition-colors">
+            <div class="flex flex-wrap items-center justify-between border-b pb-1.5 mb-2 gap-1">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xl sm:text-2xl">👩‍🌾👷</span>
+                <h2 class="text-sm sm:text-lg font-bold text-gray-800">2. แรงงาน (Labor) <span class="text-rose-500">*</span></h2>
+              </div>
+              <span class="text-[11px] sm:text-xs font-semibold px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">ผลตอบแทน: ค่าจ้าง (Wage)</span>
+            </div>
+            
+            <p class="text-[11px] sm:text-xs text-gray-500 mb-1.5">กำลังกายและกำลังสติปัญญาของมนุษย์ในการผลิต</p>
+            
+            <textarea id="ans-labor" rows="3" placeholder="พิมพ์อธิบายความหมาย และตัวอย่างของ 'แรงงาน'..." 
+                      class="w-full lined-textarea border border-gray-200 rounded-xl p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"></textarea>
+            
+            <!-- แนวคำตอบที่ซ่อนไว้ -->
+            <div id="hint-labor" class="hidden mt-2 p-2 sm:p-2.5 bg-blue-50 rounded-xl text-xs sm:text-sm text-blue-900 border border-blue-200">
+              💡 <strong>แนวคำตอบ:</strong> กำลังกาย ความคิด และสติปัญญาของมนุษย์ที่นำมาใช้ผลิตสินค้าและบริการ (ไม่รวมสัตว์หรือเครื่องจักร) ผลตอบแทนคือ <strong>"ค่าจ้าง/เงินเดือน" (Wages)</strong>
+            </div>
+          </section>
+
+          <!-- ข้อ 3: ทุน (Capital) -->
+          <section id="section-capital" class="bg-white sub-border p-3 sm:p-4 hover:border-amber-600 transition-colors">
+            <div class="flex flex-wrap items-center justify-between border-b pb-1.5 mb-2 gap-1">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xl sm:text-2xl">🚜🏢</span>
+                <h2 class="text-sm sm:text-lg font-bold text-gray-800">3. ทุน (Capital) <span class="text-rose-500">*</span></h2>
+              </div>
+              <span class="text-[11px] sm:text-xs font-semibold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">ผลตอบแทน: ดอกเบี้ย (Interest)</span>
+            </div>
+            
+            <p class="text-[11px] sm:text-xs text-gray-500 mb-1.5">เครื่องจักร โรงงาน เครื่องมือ (ไม่ใช่เงินตราโดยตรง)</p>
+            
+            <textarea id="ans-capital" rows="3" placeholder="พิมพ์อธิบายความหมาย และตัวอย่างของ 'ทุน'..." 
+                      class="w-full lined-textarea border border-gray-200 rounded-xl p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-colors"></textarea>
+            
+            <!-- แนวคำตอบที่ซ่อนไว้ -->
+            <div id="hint-capital" class="hidden mt-2 p-2 sm:p-2.5 bg-amber-50 rounded-xl text-xs sm:text-sm text-amber-900 border border-amber-200">
+              💡 <strong>แนวคำตอบ:</strong> สิ่งที่มนุษย์สร้างขึ้นเพื่อใช้ผลิต เช่น โรงงาน อุปกรณ์ เครื่องจักร เครื่องมือ ยานพาหนะ (เงินตราเป็นเพียงสื่อกลาง) ผลตอบแทนคือ <strong>"ดอกเบี้ย" (Interest)</strong>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- ข้อ 4: ผู้ประกอบการ (Entrepreneur) -->
+      <section id="section-entrepreneur" class="relative bg-white sub-border p-3 sm:p-4 hover:border-purple-600 transition-colors">
+        <div class="flex flex-wrap items-center justify-between border-b pb-1.5 mb-2 gap-1">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xl sm:text-2xl">👩‍💼💡</span>
+            <h2 class="text-sm sm:text-lg font-bold text-gray-800">4. ผู้ประกอบการ (Entrepreneur) <span class="text-rose-500">*</span></h2>
+          </div>
+          <span class="text-[11px] sm:text-xs font-semibold px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full">ผลตอบแทน: กำไร (Profit)</span>
+        </div>
+        
+        <p class="text-[11px] sm:text-xs text-gray-500 mb-1.5">ผู้นำปัจจัยทั้งสามอย่างมารวมกันเพื่อสร้างผลผลิตและรับความเสี่ยง</p>
+        
+        <textarea id="ans-entrepreneur" rows="3" placeholder="พิมพ์อธิบายความหมาย และบทบาทของ 'ผู้ประกอบการ'..." 
+                  class="w-full lined-textarea border border-gray-200 rounded-xl p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-colors"></textarea>
+        
+        <!-- แนวคำตอบที่ซ่อนไว้ -->
+        <div id="hint-entrepreneur" class="hidden mt-2 p-2 sm:p-2.5 bg-purple-50 rounded-xl text-xs sm:text-sm text-purple-900 border border-purple-200">
+          💡 <strong>แนวคำตอบ:</strong> บุคคลหรือคณะบุคคลที่นำที่ดิน แรงงาน และทุน มาจัดสรรวางแผนในการผลิตสินค้าหรือบริการ พร้อมรับความเสี่ยงทางธุรกิจ ผลตอบแทนคือ <strong>"กำไร" (Profit)</strong>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ส่วนท้ายใบงาน -->
+    <div class="mt-3.5 pt-2.5 border-t-2 border-gray-200 flex flex-wrap items-center justify-between text-[11px] sm:text-xs text-gray-500 gap-2">
+      <div>⭐ เกณฑ์การประเมิน: ตอบครบและถูกต้อง (10 คะแนน)</div>
+      <div>ลงชื่อผู้ตรวจ: ............................................</div>
+    </div>
+
+  </main>
+
+  <!-- กล่องแจ้งเตือน Toast Message (แบบ Responsive ปรับตำแหน่งบนมือถือ) -->
+  <div id="toast" class="fixed top-4 sm:top-auto sm:bottom-6 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-6 hidden bg-gray-900/95 text-white px-4 py-2.5 rounded-xl shadow-xl border border-gray-700 text-xs sm:text-sm font-medium z-50 flex items-center gap-2 max-w-[90vw]">
+    <span id="toast-icon">ℹ️</span>
+    <span id="toast-message">ข้อความ</span>
+  </div>
+
+  <script>
+    // สลับการแสดงแนวคำตอบ
+    let showHint = false;
+    function toggleAnswerHint() {
+      showHint = !showHint;
+      const hintIds = ['hint-land', 'hint-labor', 'hint-capital', 'hint-entrepreneur'];
+      hintIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.toggle('hidden', !showHint);
+        }
+      });
+      showToast(showHint ? "แสดงแนวคำตอบเพื่อช่วยทบทวนแล้ว" : "ซ่อนแนวคำตอบเรียบร้อย", showHint ? "💡" : "🙈");
+    }
+
+    // ล้างข้อมูลทั้งหมดเพื่อเริ่มใหม่
+    function resetWorksheet() {
+      const inputs = document.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        input.value = '';
+        input.classList.remove('field-error');
+      });
+      storageKeys.forEach(id => localStorage.removeItem('worksheet_' + id));
+      showToast("ล้างข้อมูลในใบงานเรียบร้อยแล้ว", "🔄");
+    }
+
+    // ฟังก์ชันตรวจสอบความสมบูรณ์ของใบงาน บังคับตอบทุกช่อง
+    function validateWorksheet() {
+      const fields = [
+        { id: 'studentName', label: 'ชื่อ-สกุล' },
+        { id: 'studentClass', label: 'ชั้น' },
+        { id: 'studentNo', label: 'เลขที่' },
+        { id: 'ans-land', label: 'ข้อ 1 ที่ดิน' },
+        { id: 'ans-labor', label: 'ข้อ 2 แรงงาน' },
+        { id: 'ans-capital', label: 'ข้อ 3 ทุน' },
+        { id: 'ans-entrepreneur', label: 'ข้อ 4 ผู้ประกอบการ' }
+      ];
+
+      // เคลียร์สถานะ error เก่าก่อน
+      fields.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (el) el.classList.remove('field-error');
+      });
+
+      for (const field of fields) {
+        const el = document.getElementById(field.id);
+        if (!el || el.value.trim() === '') {
+          if (el) {
+            el.classList.add('field-error');
+            el.focus();
+            // เลื่อนหน้าจอไปยังช่องนั้นแบบ smooth
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return { isValid: false, fieldName: field.label };
+        }
+      }
+
+      return { isValid: true };
+    }
+
+    // บันทึกใบงานเป็นไฟล์รูปภาพ PNG คุณภาพสูง
+    async function downloadAsImage() {
+      // 1. ตรวจสอบว่ากรอกครบทุกข้อหรือไม่
+      const validation = validateWorksheet();
+      if (!validation.isValid) {
+        showToast(`กรุณากรอก "${validation.fieldName}" ให้เรียบร้อยก่อนบันทึก!`, "⚠️");
+        return;
+      }
+
+      const worksheetEl = document.getElementById('worksheet');
+      const studentName = document.getElementById('studentName').value.trim() || 'ใบงาน';
+      
+      showToast("กำลังสร้างไฟล์รูปภาพ กรุณารอสักครู่...", "⏳");
+      
+      try {
+        // บันทึกโดยใช้ scale: 2 เพื่อให้ภาพคมชัดทั้งบนมือถือและคอมพิวเตอร์
+        const canvas = await html2canvas(worksheetEl, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        });
+        
+        const image = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `ใบงาน_${studentName}_ปัจจัยการผลิต.png`;
+        link.href = image;
+        link.click();
+        
+        showToast("บันทึกรูปภาพเรียบร้อยแล้ว พร้อมส่งงาน!", "🎉");
+      } catch (err) {
+        console.error(err);
+        showToast("เกิดข้อผิดพลาดในการบันทึกรูปภาพ กรุณาลองใหม่อีกครั้ง", "❌");
+      }
+    }
+
+    // แสดงข้อความแจ้งเตือน Toast
+    let toastTimeout;
+    function showToast(msg, icon = "ℹ️") {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      const toastIcon = document.getElementById('toast-icon');
+      
+      toastMsg.innerText = msg;
+      toastIcon.innerText = icon;
+      toast.classList.remove('hidden');
+      
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
+    // จัดการระบบบันทึก Auto-save ด้วย LocalStorage
+    const storageKeys = ['studentName', 'studentClass', 'studentNo', 'ans-land', 'ans-labor', 'ans-capital', 'ans-entrepreneur'];
+    
+    window.addEventListener('DOMContentLoaded', () => {
+      storageKeys.forEach(id => {
+        const el = document.getElementById(id);
+        const saved = localStorage.getItem('worksheet_' + id);
+        if (saved && el) {
+          el.value = saved;
+        }
+        if (el) {
+          el.addEventListener('input', (e) => {
+            el.classList.remove('field-error');
+            localStorage.setItem('worksheet_' + id, e.target.value);
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
